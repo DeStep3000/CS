@@ -1,6 +1,6 @@
 #include <stdio.h>
 
 int main() {
-    printf("Это тестовый для гита\n");
+    printf("Здравствуйте, как вас зовут?\n");
     return 0;
 }
