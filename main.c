@@ -197,13 +197,13 @@ int main() {
     }
 
     // создание сплайнов
-    CubicSpline *spline1[n - 1];
-    CubicSpline *spline2[m - 1];
-    compute_spline_coefficients(x1, y1, n, *spline1);
-    compute_spline_coefficients(x2, y2, n, *spline2);
+    CubicSpline spline1[n - 1];
+    CubicSpline spline2[m - 1];
+    compute_spline_coefficients(x1, y1, n, spline1);
+    compute_spline_coefficients(x2, y2, n, spline2);
 
     // проверка совпадения сплайнов
-    int is_same_spline = is_cubic_spline_same(*spline1, *spline2, n, m);
+    int is_same_spline = is_cubic_spline_same(spline1, spline2, n, m);
     if (is_same_spline) {
         printf("Spline 1 and spline 2 are the same.\n");
         return 0;
@@ -211,7 +211,7 @@ int main() {
 
     // проверка на пересечение сплайнов
     double x_intersect[2], y_intersect[2];
-    int intersect_count = find_intersection(*spline1, *spline2, x_intersect, y_intersect, n);
+    int intersect_count = find_intersection(spline1, spline2, x_intersect, y_intersect, n);
 
     if (intersect_count > 0) {
         // Если сплайны пересекаются, выводим координаты точек пересечения
@@ -221,7 +221,7 @@ int main() {
         }
     } else {
         // Если сплайны не пересекаются, находим минимальное расстояние между ними
-        double min_distance = find_min_distance(*spline1, *spline2, n, m);
+        double min_distance = find_min_distance(spline1, spline2, n, m);
         printf("The minimum distance between spline 1 and spline 2 is %f.\n", min_distance);
     }
 
