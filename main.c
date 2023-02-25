@@ -137,7 +137,7 @@ int is_cubic_spline_same(CubicSpline *spline1, CubicSpline *spline2, int n, int 
     if (n != m) {
         return 0;
     }
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < n - 1; i++) {
         if (spline1[i].a != spline2[i].a ||
             spline1[i].b != spline2[i].b ||
             spline1[i].c != spline2[i].c ||
@@ -232,8 +232,8 @@ int main() {
 //    double x2[] = {0, 1, 2, 3, 4};
 //    double y2[] = {0, 1, 4, 9, 16};
 //    // создание сплайнов
-//    CubicSpline spline1[n - 1];
-//    CubicSpline spline2[m - 1];
+    CubicSpline spline1[n - 1];
+    CubicSpline spline2[m - 1];
     compute_spline_coefficients(x1, y1, n, spline1);
     compute_spline_coefficients(x2, y2, n, spline2);
 
