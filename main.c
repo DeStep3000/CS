@@ -14,16 +14,16 @@ typedef struct {
 // Функция, которая вычисляет коэффициенты для кубического сплайна
 // на основе заданных координат x и y точек
 void compute_spline_coefficients(double *x, double *y, int n, CubicSpline *spline) {
-    double *h = malloc((n - 1) * sizeof(double));
-    double *alpha = malloc((n - 1) * sizeof(double));
+    double *h = malloc((n-1) * sizeof(double));
+    double *alpha = malloc((n-1) * sizeof(double));
     double *l = malloc(n * sizeof(double));
     double *mu = malloc(n * sizeof(double));
     double *z = malloc(n * sizeof(double));
 
     // Вычисляем разности между соседними x и y
-    for (int i = 0; i < n - 1; i++) {
-        h[i] = x[i + 1] - x[i];
-        alpha[i] = (3.0 / h[i]) * (y[i + 1] - y[i]) - (3.0 / h[i - 1]) * (y[i] - y[i - 1]);
+    for (int i = 0; i < n-1; i++) {
+        h[i] = x[i+1] - x[i];
+        alpha[i] = (3.0 / h[i]) * (y[i+1] - y[i]) - (3.0 / h[i-1]) * (y[i] - y[i-1]);
     }
 
     // Вычисляем коэффициенты l, mu и z
@@ -31,30 +31,25 @@ void compute_spline_coefficients(double *x, double *y, int n, CubicSpline *splin
     mu[0] = 0.0;
     z[0] = 0.0;
 
-    for (int i = 1; i < n - 1; i++) {
-        l[i] = 2.0 * (x[i + 1] - x[i - 1]) - h[i - 1] * mu[i - 1];
+    for (int i = 1; i < n-1; i++) {
+        l[i] = 2.0 * (x[i+1] - x[i-1]) - h[i-1] * mu[i-1];
         mu[i] = h[i] / l[i];
-        z[i] = (alpha[i - 1] - h[i - 1] * z[i - 1]) / l[i];
+        z[i] = (alpha[i-1] - h[i-1] * z[i-1]) / l[i];
     }
 
-    l[n - 1] = 1.0;
-    z[n - 1] = 0.0;
-    spline[n - 1].c = 0.0;
+    l[n-1] = 1.0;
+    z[n-1] = 0.0;
+    spline[n-1].c = 0.0;
 
     // Вычисляем коэффициенты c, b и d
-    for (int i = n - 2; i >= 0; i--) {
-        spline[i].c = z[i] - mu[i] * spline[i + 1].c;
-        spline[i].b = (y[i + 1] - y[i]) / h[i] - h[i] * (spline[i + 1].c + 2.0 * spline[i].c) / 3.0;
-        spline[i].d = (spline[i + 1].c - spline[i].c) / (3.0 * h[i]);
+    for (int i = n-2; i >= 0; i--) {
+        spline[i].c = z[i] - mu[i] * spline[i+1].c;
+        spline[i].b = (y[i+1] - y[i]) / h[i] - h[i] * (spline[i+1].c + 2.0 * spline[i].c) / 3.0;
+        spline[i].d = (spline[i+1].c - spline[i].c) / (3.0 * h[i]);
         spline[i].a = y[i];
-        spline[i].x = x[i];
     }
 
     free(h);
-    free(alpha);
-    free(l);
-    free(mu);
-    free(z);
 }
 
 // Функция, которая вычисляет расстояние между двумя точками
@@ -149,19 +144,23 @@ int is_cubic_spline_same(CubicSpline *spline1, CubicSpline *spline2, int n, int 
 }
 
 // Функция для вычисления значения кубического сплайна в точке x
-double evaluate_cubic_spline(double x, double *xs, CubicSpline *spline, int n) {
-    int i;
+double evaluate_cubic_spline(double x, double *splX, CubicSpline *spline, int n) {
+    if (x <= splX[0])
+        return spline[0].a + spline[0].b * (x - splX[0]) + spline[0].c * pow(x - splX[0], 2) + spline[0].d * pow(x - splX[0], 3);
 
-// Находим номер интервала, в котором находится x
-    for (i = 1; i < n; i++) {
-        if (x < xs[i]) {
+    if (x >= splX[n-1])
+        return spline[n-1].a + spline[n-1].b * (x - splX[n-1]) + spline[n-1].c * pow(x - splX[n-1], 2) + spline[n-1].d * pow(x - splX[n-1], 3);
+
+    int i;
+    for (i = 0; i < n-1; i++) {
+        if (x >= splX[i] && x <= splX[i+1])
             break;
-        }
     }
-    i--;
-    double dx = x - xs[i];
-// Вычисляем значение кубического сплайна в точке x
-    double y = spline[i].a + spline[i].b * dx + spline[i].c * dx * dx + spline[i].d * dx * dx * dx;
+
+    double h = splX[i+1] - splX[i];
+    double t = (x - splX[i]) / h;
+    double y = spline[i].a * (1-t) + spline[i+1].a * t + ((spline[i].b * (1-t) + spline[i+1].b * t) * h - (h * h) / 3.0 * ((1-t) * spline[i].c + t * spline[i+1].c)) * t + (h * h / 3.0) * ((1-t) * (1-t) * spline[i].d + t * t * spline[i+1].d);
+
     return y;
 }
 
@@ -196,14 +195,14 @@ int main() {
     printf("Enter the function values(y):\n");
     double y1[n];
     for (int i = 0; i < n; i++) {
-        scanf("%lf", &y1[i]);
+        scanf("lf", &y1[i]);
     }
 
     // Также делаем и для второго сплайна
     printf("Let's enter the number of our points to splain 2:\n");
 
     double m0;
-    scanf("%lf", &m0);
+    scanf("%fl", &m0);
 
     while (m0 <= 1 || m0 != (int) m0) {
         printf("Please, enter a positive integer starting from 2:\n");
@@ -224,18 +223,22 @@ int main() {
     }
 
 //    int n = 5;
-//    // инициализация координат x и y точек сплайнов
+//     // инициализация координат x и y точек сплайнов
 //    double x1[] = {0, 1, 2, 3, 4};
 //    double y1[] = {0, 1, 4, 9, 16};
 //
 //    int m = 5;
 //    double x2[] = {0, 1, 2, 3, 4};
 //    double y2[] = {0, 1, 4, 9, 16};
-//    // создание сплайнов
+    // создание сплайнов
     CubicSpline spline1[n - 1];
     CubicSpline spline2[m - 1];
     compute_spline_coefficients(x1, y1, n, spline1);
     compute_spline_coefficients(x2, y2, n, spline2);
+
+    double y = evaluate_cubic_spline(2, x1, spline1, n);
+    printf("%lf\n", y);
+
 
     // проверка совпадения сплайнов
     int is_same_spline = is_cubic_spline_same(spline1, spline2, n, m);
@@ -250,7 +253,7 @@ int main() {
 
     if (intersect_count > 0) {
         // Если сплайны пересекаются, выводим координаты точек пересечения
-        printf("Spline 1 and spline 2 intersect at:\n");
+        printf("Spline_1 and spline_2 intersect at:\n");
         for (int i = 0; i < intersect_count; i++) {
             printf("(%f, %f)\n", x_intersect[i], y_intersect[i]);
         }
