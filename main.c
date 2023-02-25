@@ -151,91 +151,125 @@ int is_cubic_spline_same(CubicSpline *spline1, CubicSpline *spline2, int n, int 
 // Функция для вычисления значения кубического сплайна в точке x
 double evaluate_cubic_spline(double x, double *xs, CubicSpline *spline, int n) {
     int i;
-
+    int flag=0;
+    double y;
 // Находим номер интервала, в котором находится x
     for (i = 1; i < n; i++) {
-        if (x < xs[i]) {
+        if (x < xs[i] && x>=xs[0]) {
+            flag=1;
             break;
         }
     }
-    i--;
-    double dx = x - xs[i];
+    if (flag==1) {
+        i--;
+        double dx = x - xs[i];
 // Вычисляем значение кубического сплайна в точке x
-    double y = spline[i].a + spline[i].b * dx + spline[i].c * dx * dx + spline[i].d * dx * dx * dx;
+        y = spline[i].a + spline[i].b * dx + spline[i].c * dx * dx + spline[i].d * dx * dx * dx;
+    }
+    else{
+        if (x<=xs[0]){
+            double dx = x - xs[0];
+            y = spline[0].a + spline[0].b * dx + spline[0].c * dx * dx + spline[0].d * dx * dx * dx;
+        }
+        if (x>=xs[n-1]){
+            double dx = x - xs[n-1];
+            y = spline[n-1].a + spline[n-1].b * dx + spline[n-1].c * dx * dx + spline[n-1].d * dx * dx * dx;
+        }
+    }
     return y;
 }
 
 int main() {
     //  Делаем приветсвие
-    printf("Hello, what's your name?\n");
-    char name[50];
-    scanf("%s", name);
-    printf("Hello, %s. Welcome to CS (Cubic_Spline).\n"
-           "This program is designed to find cubic splines and their intersections with other splines.\n"
-           "Let's enter the number of our points to splain 1:\n", name);
-
-    //  Вводим количество точек для 1 сплайна
-    double n0;
-    scanf("%lf", &n0);
-
-    //  Провереям, чтобы количество точек было целым числом и чтобы было как минимум 2 точки
-    while (n0 <= 1 || n0 != (int) n0) {
-        printf("Please, enter a positive integer starting from 2:\n");
-        scanf("%lf", &n0);
-    }
-    int n = (int) n0;
-
-    //   Вводим x
-    printf("Enter the function arguments(x):\n");
-    double x1[n];
-    for (int i = 0; i < n; i++) {
-        scanf("%f", &x1[i]);
-    }
-
-    //  Вводим y
-    printf("Enter the function values(y):\n");
-    double y1[n];
-    for (int i = 0; i < n; i++) {
-        scanf("%f", &y1[i]);
-    }
-
-    // Также делаем и для второго сплайна
-    printf("Let's enter the number of our points to splain 2:\n");
-
-    double m0;
-    scanf("%lf", &m0);
-
-    while (m0 <= 1 || m0 != (int) m0) {
-        printf("Please, enter a positive integer starting from 2:\n");
-        scanf("%lf", &m0);
-    }
-    int m = (int) m0;
-
-    printf("Enter the function arguments(x):\n");
-    double x2[m];
-    for (int i = 0; i < m; i++) {
-        scanf("%f", &x2[i]);
-    }
-
-    printf("Enter the function values(y):\n");
-    double y2[m];
-    for (int i = 0; i < m; i++) {
-        scanf("%f", &y2[i]);
-    }
-
-//    int n = 5;
-//    // инициализация координат x и y точек сплайнов
-//    double x1[] = {0, 1, 2, 3, 4};
-//    double y1[] = {0, 1, 4, 9, 16};
+//    printf("Hello, what's your name?\n");
+//    char name[50];
+//    scanf("%s", name);
+//    printf("Hello, %s. Welcome to CS (Cubic_Spline).\n"
+//           "This program is designed to find cubic splines and their intersections with other splines.\n"
+//           "Let's enter the number of our points to splain 1:\n", name);
 //
-//    int m = 5;
-//    double x2[] = {0, 1, 2, 3, 4};
-//    double y2[] = {0, 1, 4, 9, 16};
-//    // создание сплайнов
+//    //  Вводим количество точек для 1 сплайна
+//    double n0;
+//    scanf("%lf", &n0);
+//
+//    //  Провереям, чтобы количество точек было целым числом и чтобы было как минимум 2 точки
+//    while (n0 <= 1 || n0 != (int) n0) {
+//        printf("Please, enter a positive integer starting from 2:\n");
+//        scanf("%lf", &n0);
+//    }
+//    int n = (int) n0;
+//
+//    //   Вводим x
+//    printf("Enter the function arguments(x):\n");
+//    double x1[n];
+//    for (int i = 0; i < n; i++) {
+//        scanf("%lf", &x1[i]);
+//    }
+//
+//    //  Вводим y
+//    printf("Enter the function values(y):\n");
+//    double y1[n];
+//    for (int i = 0; i < n; i++) {
+//        scanf("%lf", &y1[i]);
+//    }
+//
+//    // Также делаем и для второго сплайна
+//    printf("Let's enter the number of our points to splain 2:\n");
+//
+//    double m0;
+//    scanf("%lf", &m0);
+//
+//    while (m0 <= 1 || m0 != (int) m0) {
+//        printf("Please, enter a positive integer starting from 2:\n");
+//        scanf("%lf", &m0);
+//    }
+//    int m = (int) m0;
+//
+//    printf("Enter the function arguments(x):\n");
+//    double x2[m];
+//    for (int i = 0; i < m; i++) {
+//        scanf("%lf", &x2[i]);
+//    }
+//
+//    printf("Enter the function values(y):\n");
+//    double y2[m];
+//    for (int i = 0; i < m; i++) {
+//        scanf("%lf", &y2[i]);
+//    }
+
+    int n = 5;
+    // инициализация координат x и y точек сплайнов
+    double x1[] = {0, 1, 2, 3, 4};
+    double y1[] = {0, 1, 4, 9, 16};
+
+    int m = 5;
+    double x2[] = {0, 1, 2, 3, 4};
+    double y2[] = {0, 1, 4, 9, 16};
+    // создание сплайнов
     CubicSpline spline1[n - 1];
     CubicSpline spline2[m - 1];
     compute_spline_coefficients(x1, y1, n, spline1);
     compute_spline_coefficients(x2, y2, n, spline2);
+
+    double new_x;
+    int spline_num;
+    double new_y;
+    printf("Enter the point which function value you want to know\n");
+    scanf("%lf",&new_x);
+    printf("Enter the spline number which you would like to work on\n");
+    scanf("%d",&spline_num);
+    while (spline_num!=1 && spline_num!=2){
+        printf("The spline number can be only 1 or 2\n");
+        scanf("%d",&spline_num);
+    }
+    if(spline_num == 1){
+        new_y=evaluate_cubic_spline( new_x, x1, spline1, n);
+    }
+    else {
+        new_y=evaluate_cubic_spline( new_x, x2, spline2, m);
+    }
+
+    printf("The value of function in point %lf = %lf\n", new_x, new_y);
 
     // проверка совпадения сплайнов
     int is_same_spline = is_cubic_spline_same(spline1, spline2, n, m);
