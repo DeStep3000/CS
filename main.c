@@ -144,23 +144,19 @@ int is_cubic_spline_same(CubicSpline *spline1, CubicSpline *spline2, int n, int 
 }
 
 // Функция для вычисления значения кубического сплайна в точке x
-double evaluate_cubic_spline(double x, double *splX, CubicSpline *spline, int n) {
-    if (x <= splX[0])
-        return spline[0].a + spline[0].b * (x - splX[0]) + spline[0].c * pow(x - splX[0], 2) + spline[0].d * pow(x - splX[0], 3);
-
-    if (x >= splX[n-1])
-        return spline[n-1].a + spline[n-1].b * (x - splX[n-1]) + spline[n-1].c * pow(x - splX[n-1], 2) + spline[n-1].d * pow(x - splX[n-1], 3);
-
+double evaluate_cubic_spline(double x, double *xs, CubicSpline *spline, int n) {
     int i;
-    for (i = 0; i < n-1; i++) {
-        if (x >= splX[i] && x <= splX[i+1])
+
+// Находим номер интервала, в котором находится x
+    for (i = 1; i < n; i++) {
+        if (x < xs[i]) {
             break;
+        }
     }
-
-    double h = splX[i+1] - splX[i];
-    double t = (x - splX[i]) / h;
-    double y = spline[i].a * (1-t) + spline[i+1].a * t + ((spline[i].b * (1-t) + spline[i+1].b * t) * h - (h * h) / 3.0 * ((1-t) * spline[i].c + t * spline[i+1].c)) * t + (h * h / 3.0) * ((1-t) * (1-t) * spline[i].d + t * t * spline[i+1].d);
-
+    i--;
+    double dx = x - xs[i];
+// Вычисляем значение кубического сплайна в точке x
+    double y = spline[i].a + spline[i].b * dx + spline[i].c * dx * dx + spline[i].d * dx * dx * dx;
     return y;
 }
 
