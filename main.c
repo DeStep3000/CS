@@ -189,14 +189,14 @@ int main() {
     printf("Enter the function arguments(x):\n");
     double x1[n];
     for (int i = 0; i < n; i++) {
-        scanf("%lf", &x1[i]);
+        scanf("%f", &x1[i]);
     }
 
     //  Вводим y
     printf("Enter the function values(y):\n");
     double y1[n];
     for (int i = 0; i < n; i++) {
-        scanf("%lf", &y1[i]);
+        scanf("%f", &y1[i]);
     }
 
     // Также делаем и для второго сплайна
@@ -214,13 +214,13 @@ int main() {
     printf("Enter the function arguments(x):\n");
     double x2[m];
     for (int i = 0; i < m; i++) {
-        scanf("%lf", &x2[i]);
+        scanf("%f", &x2[i]);
     }
 
     printf("Enter the function values(y):\n");
     double y2[m];
     for (int i = 0; i < m; i++) {
-        scanf("%lf", &y2[i]);
+        scanf("%f", &y2[i]);
     }
 
 //    int n = 5;
