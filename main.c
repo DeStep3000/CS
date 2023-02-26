@@ -253,13 +253,17 @@ int main() {
 //    printf("%lf\n", y);
 
     for (int i = 0; i < n - 1; i++){
-        printf("Spline%d - a = %lf, b = %lf, c = %lf, d = %lf\n", i, spline1[i].a, spline1[i].b, spline1[i].c, spline1[i].d);
+        printf("Spline%d: a = %lf, b = %lf, c = %lf, d = %lf\n", i, spline1[i].a, spline1[i].b, spline1[i].c, spline1[i].d);
+    }
+    printf("\n");
+    for (int i = 0; i < n - 1; i++){
+        printf("Spline%d: a = %lf, b = %lf, c = %lf, d = %lf\n", i, spline2[i].a, spline2[i].b, spline2[i].c, spline2[i].d);
     }
     // проверка совпадения сплайнов
     int is_same_spline = is_cubic_spline_same(spline1, spline2, n, m);
     if (is_same_spline) {
         printf("Spline 1 and spline 2 are the same.\n");
-        return 0;
+        return 0;Л
     }
 
     // проверка на пересечение сплайнов
