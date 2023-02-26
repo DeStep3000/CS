@@ -14,43 +14,41 @@ typedef struct {
 // Функция, которая вычисляет коэффициенты для кубического сплайна
 // на основе заданных координат x и y точек
 void compute_spline_coefficients(double *x, double *y, int n, CubicSpline *spline) {
-    double *h = malloc((n-1) * sizeof(double));
-    double *alpha = malloc((n-1) * sizeof(double));
+    double *h = malloc(n * sizeof(double));
+    double *alpha = malloc(n * sizeof(double));
     double *l = malloc(n * sizeof(double));
     double *mu = malloc(n * sizeof(double));
     double *z = malloc(n * sizeof(double));
+    int i;
 
-    // Вычисляем разности между соседними x и y
-    for (int i = 0; i < n-1; i++) {
+    for (i = 0; i < n - 1; i++) {
         h[i] = x[i+1] - x[i];
-        alpha[i] = 3.0 / h[i] * (y[i+1] - y[i]) - 3.0 / h[i-1] * (y[i] - y[i-1]);
     }
 
-    // Вычисляем коэффициенты l, mu и z
-    l[0] = 1.0;
-    mu[0] = 0.0;
-    z[0] = 0.0;
+    for (i = 1; i < n - 1; i++) {
+        alpha[i] = 3.0/h[i] * (y[i+1] - y[i]) - 3.0/h[i-1] * (y[i] - y[i-1]);
+    }
 
-    for (int i = 1; i < n-1; i++) {
+    l[0] = 1;
+    mu[0] = 0;
+    z[0] = 0;
+
+    for (i = 1; i < n - 1; i++) {
         l[i] = 2.0 * (x[i+1] - x[i-1]) - h[i-1] * mu[i-1];
         mu[i] = h[i] / l[i];
-        z[i] = (alpha[i-1] - h[i-1] * z[i-1]) / l[i];
+        z[i] = (alpha[i] - h[i-1] * z[i-1]) / l[i];
     }
 
-    l[n-1] = 1.0;
-    z[n-1] = 0.0;
-    double c, b, d;
+    l[n-1] = 1;
+    z[n-1] = 0;
+    spline[n-1].c = 0;
 
-    // Решаем систему уравнений для определения коэффициентов сплайнов
-    for (int i = n-2; i >= 0; i--) {
-        c = z[i] - mu[i] * c;
-        b = (y[i+1] - y[i]) / h[i] - h[i] * (c + 2.0 * mu[i]) / 3.0;
-        d = (c - mu[i] * l[i+1]) / (3.0 * h[i]);
+
+    for (i = n - 2; i >= 0; i--) {
+        spline[i].c = z[i] - mu[i] * spline[i+1].c;
+        spline[i].b = (y[i+1] - y[i])/h[i] - h[i]*(spline[i+1].c + 2.0*spline[i].c)/3.0;
+        spline[i].d = (spline[i+1].c - spline[i].c)/(3.0*h[i]);
         spline[i].a = y[i];
-        spline[i].b = b;
-        spline[i].c = c;
-        spline[i].d = d;
-//        spline[i].x = x[i]; // Если это расскоментировать, всё крашиться
     }
 
     free(h);
@@ -59,6 +57,7 @@ void compute_spline_coefficients(double *x, double *y, int n, CubicSpline *splin
     free(mu);
     free(z);
 }
+
 
 
 
@@ -253,7 +252,9 @@ int main() {
 //    double y = evaluate_cubic_spline(2, x1, spline1, n);
 //    printf("%lf\n", y);
 
-
+    for (int i = 0; i < n - 1; i++){
+        printf("Spline%d - a = %lf, b = %lf, c = %lf, d = %lf\n", i, spline1[i].a, spline1[i].b, spline1[i].c, spline1[i].d);
+    }
     // проверка совпадения сплайнов
     int is_same_spline = is_cubic_spline_same(spline1, spline2, n, m);
     if (is_same_spline) {
