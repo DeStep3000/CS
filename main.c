@@ -173,6 +173,36 @@ double evaluate_cubic_spline(double x, double *splX, CubicSpline *spline, int n)
     return y;
 }
 
+
+void sort(double *arr_x, double *arr_y, int n){
+    int noSwap;
+    int tmp;
+    for (int i = n - 1; i >= 0; i--)
+    {
+        noSwap = 1;
+        for (int j = 0; j < i; j++)
+        {
+            if (arr_x[j] > arr_x[j + 1])
+            {
+                tmp = arr_x[j];
+                arr_x[j] = arr_x[j + 1];
+                arr_x[j + 1] = tmp;
+                noSwap = 0;
+                tmp= arr_y[j];
+                arr_y[j]=arr_y[j+1];
+                arr_y[j+1]=tmp;
+            }
+        }
+        if (noSwap == 1)
+            break;
+    }
+    printf("Sorted value of x and y\n");
+    for (int i=0; i<n;i++){
+        printf("%lf %lf\n",arr_x[i],arr_y[i]);
+    }
+
+}
+
 int main() {
     // ЕСЛИ ЭТО ВСЁ РАСКОМЕНТИРОВАТЬ, КОД ВЫВОДИТ НЕ "Spline 1 and spline 2 are the same."
     // ЭТО ВСЁ ИДЕТ, КОГДА МЫ МЕНЯЕМ ПО ДРУГОМУ ВВОДИМ ЧИСЛА В МАССИВ
@@ -244,14 +274,14 @@ int main() {
 //    double y2[] = {0, 1, 4, 9, 16};
 
     // создание сплайнов
+    sort(x1,y1,n);
+    sort(x2,y2,m);
     CubicSpline spline1[n];
     CubicSpline spline2[m];
     compute_spline_coefficients(x1, y1, n, spline1);
     compute_spline_coefficients(x2, y2, n, spline2);
 
-    double y = evaluate_cubic_spline(1.5, x1, spline1, n);
-    printf("%lf\n", y);
-
+    //Выводим коэффициенты
     for (int i = 0; i < n; i++) {
         printf("Spline%d: a = %lf, b = %lf, c = %lf, d = %lf, x = %lf\n", i, spline1[i].a, spline1[i].b, spline1[i].c,
                spline1[i].d, spline1[i].x);
@@ -261,6 +291,29 @@ int main() {
         printf("Spline%d: a = %lf, b = %lf, c = %lf, d = %lf, x = %lf\n", i, spline2[i].a, spline2[i].b, spline2[i].c,
                spline2[i].d, spline2[i].x);
     }
+
+    // Спрашиваем у пользователя, в каком сплайне мы хотим вычислить значение точки сплайна
+    // И вычисляем
+    double new_x;
+    int spline_num;
+    double new_y;
+    printf("Enter the point which function value you want to know\n");
+    scanf("%lf",&new_x);
+    printf("Enter the spline number which you would like to work on\n");
+    scanf("%d",&spline_num);
+    while (spline_num!=1 && spline_num!=2){
+        printf("The spline number can be only 1 or 2\n");
+        scanf("%d",&spline_num);
+    }
+    if(spline_num == 1){
+        new_y=evaluate_cubic_spline( new_x, x1, spline1, n);
+    }
+    else {
+        new_y=evaluate_cubic_spline( new_x, x2, spline2, m);
+    }
+
+    printf("The value of function in point %lf = %lf\n", new_x, new_y);
+
     // проверка совпадения сплайнов
     int is_same_spline = is_cubic_spline_same(spline1, spline2, n, m);
     if (is_same_spline) {
