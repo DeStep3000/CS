@@ -120,11 +120,13 @@ double find_min_distance(CubicSpline *spline1, CubicSpline *spline2, int n, int 
     for (i = 0; i < n - 1; i++) {
         for (j = 0; j < m - 1; j++) {
             double x1 = spline1[i].x;
-            double y1 = spline1[i].a + spline1[i].b * (x1 - spline1[i].x) + spline1[i].c * pow(x1 - spline1[i].x, 2) +
-                        spline1[i].d * pow(x1 - spline1[i].x, 3);
+            double y1 = spline1[i].a + spline1[i].b * fabs((x1 - spline1[i + 1].x)) +
+                        spline1[i].c * pow(x1 - spline1[i + 1].x, 2) +
+                        spline1[i].d * fabs(pow(x1 - spline1[i].x, 3));
             double x2 = spline2[j].x;
-            double y2 = spline2[j].a + spline2[j].b * (x2 - spline2[j].x) + spline2[j].c * pow(x2 - spline2[j].x, 2) +
-                        spline2[j].d * pow(x2 - spline2[j].x, 3);
+            double y2 = spline2[j].a + spline2[j].b * fabs((x2 - spline2[j + 1].x)) +
+                        spline2[j].c * pow(x2 - spline2[j + 1].x, 2) +
+                        spline2[j].d * fabs(pow(x2 - spline2[j + 1].x, 3));
             double distance = compute_distance(x1, y1, x2, y2);
             if (distance < min_distance) {
                 min_distance = distance;
@@ -169,36 +171,33 @@ double evaluate_cubic_spline(double x, double *splX, CubicSpline *spline, int n)
 
 
     double h = x - splX[i];
-    double y = spline[i].a + spline[i].b * h + spline[i].c * pow(h, 2)+spline[i].d * pow(h, 3);
+    double y = spline[i].a + spline[i].b * h + spline[i].c * pow(h, 2) + spline[i].d * pow(h, 3);
     return y;
 }
 
 
-void sort(double *arr_x, double *arr_y, int n){
+void sort(double *arr_x, double *arr_y, int n) {
     int noSwap;
     int tmp;
-    for (int i = n - 1; i >= 0; i--)
-    {
+    for (int i = n - 1; i >= 0; i--) {
         noSwap = 1;
-        for (int j = 0; j < i; j++)
-        {
-            if (arr_x[j] > arr_x[j + 1])
-            {
+        for (int j = 0; j < i; j++) {
+            if (arr_x[j] > arr_x[j + 1]) {
                 tmp = arr_x[j];
                 arr_x[j] = arr_x[j + 1];
                 arr_x[j + 1] = tmp;
                 noSwap = 0;
-                tmp= arr_y[j];
-                arr_y[j]=arr_y[j+1];
-                arr_y[j+1]=tmp;
+                tmp = arr_y[j];
+                arr_y[j] = arr_y[j + 1];
+                arr_y[j + 1] = tmp;
             }
         }
         if (noSwap == 1)
             break;
     }
     printf("Sorted value of x and y\n");
-    for (int i=0; i<n;i++){
-        printf("%lf %lf\n",arr_x[i],arr_y[i]);
+    for (int i = 0; i < n; i++) {
+        printf("%lf %lf\n", arr_x[i], arr_y[i]);
     }
 
 }
@@ -273,11 +272,15 @@ int main() {
 //    double x2[] = {0, 1, 2, 3, 4};
 //    double y2[] = {0, 1, 4, 9, 16};
 
+    // сортировка сплайнов
+    sort(x1, y1, n);
+    sort(x2, y2, m);
+
     // создание сплайнов
-    sort(x1,y1,n);
-    sort(x2,y2,m);
     CubicSpline spline1[n];
     CubicSpline spline2[m];
+
+    // вычисление коэффициентов
     compute_spline_coefficients(x1, y1, n, spline1);
     compute_spline_coefficients(x2, y2, n, spline2);
 
@@ -297,19 +300,20 @@ int main() {
     double new_x;
     int spline_num;
     double new_y;
-    printf("Enter the point which function value you want to know\n");
-    scanf("%lf",&new_x);
     printf("Enter the spline number which you would like to work on\n");
-    scanf("%d",&spline_num);
-    while (spline_num!=1 && spline_num!=2){
+    scanf("%d", &spline_num);
+
+    printf("Enter the point which function value you want to know\n");
+    scanf("%lf", &new_x);
+
+    while (spline_num != 1 && spline_num != 2) {
         printf("The spline number can be only 1 or 2\n");
-        scanf("%d",&spline_num);
+        scanf("%d", &spline_num);
     }
-    if(spline_num == 1){
-        new_y=evaluate_cubic_spline( new_x, x1, spline1, n);
-    }
-    else {
-        new_y=evaluate_cubic_spline( new_x, x2, spline2, m);
+    if (spline_num == 1) {
+        new_y = evaluate_cubic_spline(new_x, x1, spline1, n);
+    } else {
+        new_y = evaluate_cubic_spline(new_x, x2, spline2, m);
     }
 
     printf("The value of function in point %lf = %lf\n", new_x, new_y);
@@ -322,6 +326,7 @@ int main() {
     }
 
     // проверка на пересечение сплайнов
+    // ВОТ НАД ЭТИМ НАДО РАБОТАТЬ
     double x_intersect[2], y_intersect[2];
     int intersect_count = find_intersection(spline1, spline2, x_intersect, y_intersect, n);
 
