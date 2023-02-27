@@ -49,6 +49,7 @@ void compute_spline_coefficients(double *x, double *y, int n, CubicSpline *splin
         spline[i].b = (y[i+1] - y[i])/h[i] - h[i]*(spline[i+1].c + 2.0*spline[i].c)/3.0;
         spline[i].d = (spline[i+1].c - spline[i].c)/(3.0*h[i]);
         spline[i].a = y[i];
+        spline[i].x = x[i];
     }
 
     free(h);
@@ -157,19 +158,18 @@ double evaluate_cubic_spline(double x, double *splX, CubicSpline *spline, int n)
     if (x <= splX[0])
         return spline[0].a + spline[0].b * (x - splX[0]) + spline[0].c * pow(x - splX[0], 2) + spline[0].d * pow(x - splX[0], 3);
 
-    if (x >= splX[n-1])
-        return spline[n-1].a + spline[n-1].b * (x - splX[n-1]) + spline[n-1].c * pow(x - splX[n-1], 2) + spline[n-1].d * pow(x - splX[n-1], 3);
+    if (x >= splX[n-2])
+        return spline[n-2].a + spline[n-2].b * (x - splX[n-2]) + spline[n-2].c * pow(x - splX[n-2], 2) + spline[n-2].d * pow(x - splX[n-2], 3);
 
     int i;
     for (i = 0; i < n-1; i++) {
-        if (x >= splX[i] && x <= splX[i+1])
+        if (x >= splX[i] && x < splX[i+1])
             break;
     }
 
-    double h = splX[i+1] - splX[i];
-    double t = (x - splX[i]) / h;
-    double y = spline[i].a * (1-t) + spline[i+1].a * t + ((spline[i].b * (1-t) + spline[i+1].b * t) * h - (h * h) / 3.0 * ((1-t) * spline[i].c + t * spline[i+1].c)) * t + (h * h / 3.0) * ((1-t) * (1-t) * spline[i].d + t * t * spline[i+1].d);
 
+    double h = x - splX[i];
+    double y = spline[i].a + spline[i].b * h + spline[i].c * pow(h, 2); + spline[i].d * pow(h, 3);
     return y;
 }
 
@@ -244,26 +244,26 @@ int main() {
 //    double y2[] = {0, 1, 4, 9, 16};
 
     // создание сплайнов
-    CubicSpline spline1[n - 1];
-    CubicSpline spline2[m - 1];
+    CubicSpline spline1[n];
+    CubicSpline spline2[m];
     compute_spline_coefficients(x1, y1, n, spline1);
     compute_spline_coefficients(x2, y2, n, spline2);
 
-//    double y = evaluate_cubic_spline(2, x1, spline1, n);
-//    printf("%lf\n", y);
+    double y = evaluate_cubic_spline(2, x1, spline1, n);
+    printf("%lf\n", y);
 
-    for (int i = 0; i < n - 1; i++){
-        printf("Spline%d: a = %lf, b = %lf, c = %lf, d = %lf\n", i, spline1[i].a, spline1[i].b, spline1[i].c, spline1[i].d);
+    for (int i = 0; i < n; i++){
+        printf("Spline%d: a = %lf, b = %lf, c = %lf, d = %lf, x = %lf\n", i, spline1[i].a, spline1[i].b, spline1[i].c, spline1[i].d, spline1[i].x);
     }
     printf("\n");
-    for (int i = 0; i < n - 1; i++){
-        printf("Spline%d: a = %lf, b = %lf, c = %lf, d = %lf\n", i, spline2[i].a, spline2[i].b, spline2[i].c, spline2[i].d);
+    for (int i = 0; i < n; i++){
+        printf("Spline%d: a = %lf, b = %lf, c = %lf, d = %lf, x = %lf\n", i, spline2[i].a, spline2[i].b, spline2[i].c, spline2[i].d, spline2[i].x);
     }
     // проверка совпадения сплайнов
     int is_same_spline = is_cubic_spline_same(spline1, spline2, n, m);
     if (is_same_spline) {
         printf("Spline 1 and spline 2 are the same.\n");
-        return 0;Л
+        return 0;
     }
 
     // проверка на пересечение сплайнов
