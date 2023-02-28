@@ -65,51 +65,82 @@ double compute_distance(double x1, double y1, double x2, double y2) {
     return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
 }
 
-// Функция, которая проверяет, пересекаются ли два кубических сплайна, и если да, находит точки пересечения
-int find_intersection(CubicSpline *spline1, CubicSpline *spline2, double *x_intersect, double *y_intersect, int n) {
-    double t1, t2, t3, t4, a, b, c, delta, t;
-    int i, intersect_count = 0;
-    // Проверяем пересечение каждого интервала
-    for (i = 0; i < n - 1; i++) {
-        t1 = spline1[i].a - spline2[i].a + spline2[i].b * spline1[i].x - spline1[i].b * spline2[i].x;
-        t2 = spline1[i].c - spline2[i].c;
-        t3 = spline1[i].d - spline2[i].d;
-        t4 = spline1[i + 1].a - spline2[i + 1].a + spline2[i + 1].b * spline1[i + 1].x -
-             spline1[i + 1].b * spline2[i + 1].x;
-        a = -t1 + t4;
-        b = 3 * t1 - 2 * t2 + t4;
-        c = -2 * t1 + t2 + t3 - t4;
-        delta = b * b - 4 * a * c;
-        if (delta >= 0) {
-            // Если уравнение имеет корни, проверяем их значения
-            if (fabs(a) < EPSILON) {
-                t = -c / b;
-                if (t >= 0 && t <= 1) {
-                    x_intersect[intersect_count] = spline1[i].x + t * (spline1[i + 1].x - spline1[i].x);
-                    y_intersect[intersect_count] =
-                            spline1[i].a + t * (spline1[i].b + t * (spline1[i].c + t * spline1[i].d));
-                    intersect_count++;
-                }
-            } else {
-                t = (-b + sqrt(delta)) / (2 * a);
-                if (t >= 0 && t <= 1) {
-                    x_intersect[intersect_count] = spline1[i].x + t * (spline1[i + 1].x - spline1[i].x);
-                    y_intersect[intersect_count] =
-                            spline1[i].a + t * (spline1[i].b + t * (spline1[i].c + t * spline1[i].d));
-                    intersect_count++;
-                }
-                t = (-b - sqrt(delta)) / (2 * a);
-                if (t >= 0 && t <= 1) {
-                    x_intersect[intersect_count] = spline1[i].x + t * (spline1[i + 1].x - spline1[i].x);
-                    y_intersect[intersect_count] =
-                            spline1[i].a + t * (spline1[i].b + t * (spline1[i].c + t * spline1[i].d));
-                    intersect_count++;
-                }
+double find_intersections(CubicSpline *spline1, CubicSpline *spline2, double *x_intersect, double *y_intersect, int n){
+    int intersect_count=0;
+    for (int i=n-1;i>0;--i){
+        double x0= spline1[i].x;
+        double a0 = spline1[i].a - spline2[i].a;
+        double b0 = spline1[i].b - spline2[i].b;
+        double c0 = spline1[i].c - spline2[i].c;
+        double d0 = spline1[i].d - spline2[i].d;
+        while (fabs(a0+b0*x0+c0*x0*x0+d0*x0*x0*x0)>EPSILON){
+            x0-=(a0+b0*x0+c0*x0*x0+d0*x0*x0*x0)/(b0+2*c0*x0+3*d0*x0*x0);
+            if (x0<=spline1[i-1].x){
+                break;
             }
         }
+        if (fabs(a0+b0*x0+c0*x0*x0+d0*x0*x0*x0)<=EPSILON)
+        {
+            x_intersect[intersect_count]=x0;
+            y_intersect[intersect_count]=fabs(a0+b0*x0+c0*x0*x0+d0*x0*x0*x0);
+            intersect_count++;
+        }
+
     }
+
     return intersect_count;
 }
+
+
+
+
+
+
+//// Функция, которая проверяет, пересекаются ли два кубических сплайна, и если да, находит точки пересечения
+//int find_intersection(CubicSpline *spline1, CubicSpline *spline2, double *x_intersect, double *y_intersect, int n) {
+//    double t1, t2, t3, t4, a, b, c, delta, t;
+//    int i, intersect_count = 0;
+//    // Проверяем пересечение каждого интервала
+//    for (i = 0; i < n - 1; i++) {
+//        t1 = spline1[i].a - spline2[i].a + spline2[i].b * spline1[i].x - spline1[i].b * spline2[i].x;
+//        t2 = spline1[i].c - spline2[i].c;
+//        t3 = spline1[i].d - spline2[i].d;
+//        t4 = spline1[i + 1].a - spline2[i + 1].a + spline2[i + 1].b * spline1[i + 1].x -
+//             spline1[i + 1].b * spline2[i + 1].x;
+//        a = -t1 + t4;
+//        b = 3 * t1 - 2 * t2 + t4;
+//        c = -2 * t1 + t2 + t3 - t4;
+//        delta = b * b - 4 * a * c;
+//        if (delta >= 0) {
+//            // Если уравнение имеет корни, проверяем их значения
+//            if (fabs(a) < EPSILON) {
+//                t = -c / b;
+//                if (t >= 0 && t <= 1) {
+//                    x_intersect[intersect_count] = spline1[i].x + t * (spline1[i + 1].x - spline1[i].x);
+//                    y_intersect[intersect_count] =
+//                            spline1[i].a + t * (spline1[i].b + t * (spline1[i].c + t * spline1[i].d));
+//                    intersect_count++;
+//                }
+//            } else {
+//                t = (-b + sqrt(delta)) / (2 * a);
+//                if (t >= 0 && t <= 1) {
+//                    x_intersect[intersect_count] = spline1[i].x + t * (spline1[i + 1].x - spline1[i].x);
+//                    y_intersect[intersect_count] =
+//                            spline1[i].a + t * (spline1[i].b + t * (spline1[i].c + t * spline1[i].d));
+//                    intersect_count++;
+//                }
+//                t = (-b - sqrt(delta)) / (2 * a);
+//                if (t >= 0 && t <= 1) {
+//                    x_intersect[intersect_count] = spline1[i].x + t * (spline1[i + 1].x - spline1[i].x);
+//                    y_intersect[intersect_count] =
+//                            spline1[i].a + t * (spline1[i].b + t * (spline1[i].c + t * spline1[i].d));
+//                    intersect_count++;
+//                }
+//            }
+//        }
+//    }
+//    return intersect_count;
+//}
 
 
 // Функция, которая находит минимальное расстояние между двумя кубическими сплайнами
@@ -334,7 +365,7 @@ int main() {
     // ВОТ НАД ЭТИМ НАДО РАБОТАТЬ
     int min_p = (m < n ? m : n);
     double x_intersect[min_p], y_intersect[min_p];
-    int intersect_count = find_intersection(spline1, spline2, x_intersect, y_intersect, min_p);
+    int intersect_count = find_intersections(spline1, spline2, x_intersect, y_intersect, min_p);
 
     if (intersect_count > 0) {
         // Если сплайны пересекаются, выводим координаты точек пересечения
