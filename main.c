@@ -65,36 +65,32 @@ double compute_distance(double x1, double y1, double x2, double y2) {
     return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
 }
 
-double find_intersections(CubicSpline *spline1, CubicSpline *spline2, double *x_intersect, double *y_intersect, int n){
-    int intersect_count=0;
-    for (int i=n-1;i>0;--i){
-        double x0= spline1[i].x;
-        double a0 = spline1[i].a - spline2[i].a;
-        double b0 = spline1[i].b - spline2[i].b;
-        double c0 = spline1[i].c - spline2[i].c;
-        double d0 = spline1[i].d - spline2[i].d;
-        while (fabs(a0+b0*x0+c0*x0*x0+d0*x0*x0*x0)>EPSILON){
-            x0-=(a0+b0*x0+c0*x0*x0+d0*x0*x0*x0)/(b0+2*c0*x0+3*d0*x0*x0);
-            if (x0<=spline1[i-1].x){
-                break;
-            }
-        }
-        if (fabs(a0+b0*x0+c0*x0*x0+d0*x0*x0*x0)<=EPSILON)
-        {
-            x_intersect[intersect_count]=x0;
-            y_intersect[intersect_count]=fabs(a0+b0*x0+c0*x0*x0+d0*x0*x0*x0);
-            intersect_count++;
-        }
-
-    }
-
-    return intersect_count;
+// я пытался
+//double find_intersections(CubicSpline *spline1, CubicSpline *spline2, double *x_intersect, double *y_intersect, int n){
+//    int intersect_count=0;
+//    for (int i=n-1;i>1;--i){
+//        double x0= spline1[i].x-EPSILON;
+//        double a0 = spline1[i].a - spline2[i].a;
+//        double b0 = spline1[i].b - spline2[i].b;
+//        double c0 = spline1[i].c - spline2[i].c;
+//        double d0 = spline1[i].d - spline2[i].d;
+//        while (a0+b0*x0+c0*x0*x0+d0*x0*x0*x0>EPSILON){
+//            x0-=(a0+b0*x0+c0*x0*x0+d0*x0*x0*x0)/(b0+2*c0*x0+3*d0*x0*x0);
+//            if (x0<=spline1[i-1].x){
+//                break;
+//            }
+//        }
+//        if (fabs(a0+b0*x0+c0*x0*x0+d0*x0*x0*x0)<=EPSILON)
+//        {
+//            x_intersect[intersect_count]=x0;
+//            y_intersect[intersect_count]=fabs(a0+b0*x0+c0*x0*x0+d0*x0*x0*x0);
+//            intersect_count++;
+//        }
+//
+//    }
+//
+//    return intersect_count;
 }
-
-
-
-
-
 
 //// Функция, которая проверяет, пересекаются ли два кубических сплайна, и если да, находит точки пересечения
 //int find_intersection(CubicSpline *spline1, CubicSpline *spline2, double *x_intersect, double *y_intersect, int n) {
@@ -338,13 +334,14 @@ int main() {
     printf("Enter the spline number, which you would like to work on:\n");
     scanf("%d", &spline_num);
 
-    printf("Enter the point, which function value you want to know:\n");
-    scanf("%lf", &new_x);
-
     while (spline_num != 1 && spline_num != 2) {
         printf("The spline number can be only 1 or 2:\n");
         scanf("%d", &spline_num);
     }
+
+    printf("Enter the point, which function value you want to know:\n");
+    scanf("%lf", &new_x);
+
     if (spline_num == 1) {
         new_y = evaluate_cubic_spline(new_x, x1, spline1, n);
     } else {
