@@ -13,12 +13,45 @@ typedef struct {
     double x; // Левый конец интервала
 } CubicSpline;
 
+float difference(float x, int i, int j, CubicSpline *spline1, CubicSpline *spline2, double *x1, double *x2) {
+    float s1 = spline1[i].a + spline1[i].b * (x - x1[i]) + spline1[i].c * pow(x - x1[i], 2) +
+               spline1[i].d * pow(x - x1[i], 3);
+    float s2 = spline2[j].a + spline2[j].b * (x - x2[j]) + spline2[j].c * pow(x - x2[j], 2) +
+               spline2[j].d * pow(x - x2[j], 3);
+    return s1 - s2;
+}
 
-struct {
-    double first;
-    double second;
-} DeStep[3] = {EPSILON, EPSILON, EPSILON, EPSILON, EPSILON, EPSILON};
+double derivative(float x, int i, int j, CubicSpline *spline1, CubicSpline *spline2, double *x1, double *x2) {
+    double h, value_of_der;
+    h = 0.01;
+    value_of_der = (difference(x + h, i, j, spline1, spline2, x1, x2) -
+            difference(x - h, i, j, spline1, spline2, x1, x2)) / (2 * h);
+    return value_of_der;
+}
 
+int find_intersection(double *x1, double *x2, double *y1, double *y2, CubicSpline *spline1, CubicSpline *spline2,  int n, int m) {
+    int k, flag, count = 0, ff = 1;
+    float x;
+    for (int i = 0; i < n - 2; i++) {
+        x = x1[i + 1];
+        for (int j = 0; j < m - 2; j++) {
+            k = 0;
+            flag = 1;
+            while (fabs(difference(x, i, j, spline1, spline2, x1, x2)) > EPSILON) {
+                x -= difference(x, i, j, spline1, spline2, x1, x2) / derivative(x, i, j, spline1, spline2, x1, x2);
+                if (x < x1[i]) {
+                    flag = 0;
+                    break;
+                }
+            }
+            if ((ff == 1) && (x >= x2[j]) && (x <= x2[j + 1]) && (x >= x1[i]) && (x <= x1[i + 1])) {
+                count += 1;
+                printf("x: %f y: %f\n", x, f1(x, i, j));
+            }
+        }
+    }
+    return count;
+}
 
 // Функция, которая вычисляет коэффициенты для кубического сплайна
 // на основе заданных координат x и y точек
@@ -109,7 +142,7 @@ double min(double a, double b) {
 
 // Функция, которая проверяет, пересекаются ли два кубических сплайна, и если да, находит точки пересечения
 int find_intersection(CubicSpline *spline1, CubicSpline *spline2, int n, int m, double *x1, double *x2,
-                       double *y1, double *y2) {
+                      double *y1, double *y2) {
     double right, left;
     for (int i = 0; i < n; i++) {
         for (int j = 0; i < m; i++) {
@@ -118,8 +151,9 @@ int find_intersection(CubicSpline *spline1, CubicSpline *spline2, int n, int m, 
             if (left < right) {
                 double A = spline1[i].d - spline2[j].d;
                 double B = spline1[i].c - 3 * spline1[i].d * x1[i] - spline2[j].c + 3 * spline2[j].d * x2[j];
-                double C = spline1[i].b - 2 * spline1[i].c * x1[i] + 3 * spline1[i].d * x1[i] * x1[i] - spline2[j].b +
-                           2 * spline2[j].c * x2[j] - 3 * spline2[j].d * x2[j] * x2[j];
+                double C =
+                        spline1[i].b - 2 * spline1[i].c * x1[i] + 3 * spline1[i].d * x1[i] * x1[i] - spline2[j].b +
+                        2 * spline2[j].c * x2[j] - 3 * spline2[j].d * x2[j] * x2[j];
                 double D = y1[i] - spline1[i].b * x1[i] + spline1[i].c * x1[i] * x1[i] -
                            spline1[i].d * x1[i] * x1[i] * x1[i] - y2[j] + spline2[j].b * x2[j] -
                            spline2[j].c * x2[j] * x2[j] + spline2[j].d * x2[j] * x2[j] * x2[j];
