@@ -65,22 +65,44 @@ double compute_distance(double x1, double y1, double x2, double y2) {
 }
 
 
-float difference(double x, int i, int j, CubicSpline *spline1, CubicSpline *spline2, double *x1, double *x2) {
-    double s1 = spline1[i].a + spline1[i].b * (x - x1[i]) + spline1[i].c * pow(x - x1[i], 2) +
-               spline1[i].d * pow(x - x1[i], 3);
-    double s2 = spline2[j].a + spline2[j].b * (x - x2[j]) + spline2[j].c * pow(x - x2[j], 2) +
-               spline2[j].d * pow(x - x2[j], 3);
+float difference(double x, int i, int j, CubicSpline *spline1, CubicSpline *spline2) {
+    double s1 = spline1[i].a + spline1[i].b * (x) + spline1[i].c * pow(x , 2) +
+               spline1[i].d * pow(x , 3);
+    double s2 = spline2[j].a + spline2[j].b * (x) + spline2[j].c * pow(x, 2) +
+               spline2[j].d * pow(x , 3);
     return s1 - s2;
 }
 
 
-double derivative(double x, int i, int j, CubicSpline *spline1, CubicSpline *spline2, double *x1, double *x2) {
-    double h, value_of_der;
-    h = 0.01;
-    value_of_der = (difference(x + h, i, j, spline1, spline2, x1, x2) -
-                    difference(x - h, i, j, spline1, spline2, x1, x2)) / (2 * h);
-    return value_of_der;
+double derivative(double x, int i, int j, CubicSpline *spline1, CubicSpline *spline2) {
+    return spline1[i].b - spline2[i].b + 2 * x * spline1[i].c - 2 * x * spline2[i].c + 3 * x * x * spline1[i].d - 3 * x * x * spline2[i].d;
 }
+
+double solve(CubicSpline *spline1 ,CubicSpline *spline2,int i,int j,double x_prev,double xi) {
+    double x0 = x_prev; // начальное приближение
+    double x1 = x0 - difference(x0, i, j,  spline1, spline1) / derivative(x0, i,j, spline1, spline1);
+    int count=0;
+    int flag=0;
+    while (fabs(spline1[i].a + spline1[i].b * (x1 - x0) + spline1[i].c * pow(x1 - x0 , 2) +
+                spline1[i].d * pow(x1 - x0 , 3)) > EPSILON) {
+        count++;
+        x0 = x1;
+        x1 = x0 - difference(x0-xi, i, j,  spline1, spline1) / derivative(x0-xi, i,j, spline1, spline1);
+        if (count = 10000)
+        {
+            flag=0;
+            break;
+        }
+        flag =1;
+    }
+    if (flag=1) {
+        return x1;
+    }
+    else {
+        return EPSILON;
+    }
+}
+
 
 // Функция для вычисления значения кубического сплайна в точке x
 double evaluate_cubic_spline(double x, double *splX, CubicSpline *spline, int n) {
@@ -105,34 +127,22 @@ double evaluate_cubic_spline(double x, double *splX, CubicSpline *spline, int n)
 }
 
 // Функция, которая проверяет, пересекаются ли два кубических сплайна, и если да, находит точки пересечения
-int find_intersection(CubicSpline *spline1, CubicSpline *spline2,  int n, int m,
-                      double *x1, double *x2, double *y1, double *y2, double *x_in, double *y_in) {
-    int k, flag = 1, count = 0;
-    double x;
-//    int min_n = (n < m ? n : m);
+int find_intersection(CubicSpline *spline1, CubicSpline *spline2, int n, int m, double *x1,double *x2, double x_intersect[],double y_intersect[]) {
+    int int_count=0;
     for (int i = 0; i < n; i++) {
-        x = x1[i + 1];
+        double x_prev= x1[i+1];
+        double xyi;
         for (int j = 0; j < m; j++) {
-            k = 0;
-            flag = 1;
-            while (fabs(difference(x, i, j, spline1, spline2, x1, x2)) > EPSILON) {
-                x -= difference(x, i, j, spline1, spline2, x1, x2) / derivative(x, i, j, spline1, spline2, x1, x2);
-                k++;
-                if (k > 100000) {
-                    flag = 0;
-                    printf("%d\n", 777);
-                    break;
-                }
+            int x_value=solve(spline1,spline2,i,j,x_prev,xyi);
+            if (x_value==EPSILON || x_value<x1[i] || x_value>x1[i+1] || x_value<x2[j] || x_value>x2[j+1] ){
+                break;
             }
-            if ((flag == 1) && (x >= x2[j]) && (x <= x2[j + 1]) && (x >= x1[i]) && (x <= x1[i + 1])) {
-                count += 1;
-                x_in[i] = x;
-                y_in[i] = evaluate_cubic_spline(x, x1, spline1, n);
-            }
+            x_intersect[int_count]=x_value;
+            y_intersect[int_count]=spline1[i].a + spline1[i].b * x_value + spline1[i].c * pow(x_value, 2) + spline1[i].d * pow(x_value, 3);
+            int_count++;
         }
-        printf("%d\n", k);
     }
-    return count;
+    return int_count;
 }
 
 
@@ -337,7 +347,7 @@ int main() {
     // ВОТ НАД ЭТИМ НАДО РАБОТАТЬ
     int min_p = (m < n ? m : n);
     double x_intersect[min_p], y_intersect[min_p];
-    int intersect_count = find_intersection(spline1, spline2, n, m, x1, x2, y1, y2, x_intersect, y_intersect);
+    int intersect_count = find_intersection(spline1, spline2, n, m, x1, x2, x_intersect, y_intersect);
 
     if (intersect_count > 0) {
         // Если сплайны пересекаются, выводим координаты точек пересечения
