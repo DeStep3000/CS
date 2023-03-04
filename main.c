@@ -14,7 +14,7 @@ typedef struct {
 } CubicSpline;
 
 
-typedef struct coords {
+typedef struct {
     double x;
     double y;
 } Coords;
@@ -160,7 +160,8 @@ int solve_cubic(double *x, double a, double b, double c) {
 
 
 // Функция, которая проверяет, пересекаются ли два кубических сплайна, и если да, находит точки пересечения
-int find_intersection(Coords *intersect_points, CubicSpline *spline1, CubicSpline *spline2, double *x_1, double *x_2, int n,
+int
+find_intersection(Coords *intersect_points, CubicSpline *spline1, CubicSpline *spline2, double *x_1, double *x_2, int n,
                   int m) {
     int curr = 0;
     double *roots = (double *) malloc(3 * sizeof(double));
@@ -172,10 +173,22 @@ int find_intersection(Coords *intersect_points, CubicSpline *spline1, CubicSplin
             double right_border = min(x_1[i + 1], x_2[j + 1]);
             if (left_border <= right_border) {
                 // ax^3 + bx^2 + cx + d
-                double a = spline1[i].a - spline2[j].a;
-                double b = spline1[i].b - spline2[j].b;
-                double c = spline1[i].c - spline2[j].c;
-                double d = spline1[i].d - spline2[j].d;
+                double a = spline1[i].d - spline2[j].d;
+                double b = (spline1[i].c - 3 * spline1[i].d * x_1[i]);
+                b -= (spline2[j].c - 3 * spline2[j].d * x_2[j]);
+
+                double c = spline1[i].b - 2 * spline1[i].c * x_1[i] +
+                           3 * spline1[i].d * pow(x_1[i], 2);
+                c -= spline2[j].b - 2 * spline2[j].c * x_2[j] +
+                     3 * spline2[j].d * pow(x_2[j], 2);
+
+                double d = spline1[i].a - spline1[i].b * x_1[i] +
+                           spline1[i].c * pow(x_1[i], 2) -
+                           spline1[i].d * pow(x_1[i], 3);
+                d -= spline2[j].a - spline2[j].b * x_2[j] +
+                     spline2[j].c * pow(x_2[j], 2) -
+                     spline2[j].d * pow(x_2[j], 3);
+
                 if (a != 0) {
                     // кубический случай
                     // приводим уравнение для Кардано
@@ -201,6 +214,7 @@ int find_intersection(Coords *intersect_points, CubicSpline *spline1, CubicSplin
                             continue;
                         intersect_points[curr].x = roots[k];
                         intersect_points[curr].y = calculate_point(&spline1[i], roots[k], x_1[i]);
+                        curr++;
                     }
                 }
             }
@@ -401,31 +415,31 @@ int main() {
 
     int m = 4;
     double x2[] = {2, 4, 7, 11};
-    double y2[] = {3, 4, 2, 5};
+    double y2[] = {1, 4, 2, 5};
     printf("------------------------------------------------------------------------------------------\n");
     // сортировка сплайнов
     sort(x1, y1, n, 1);
     sort(x2, y2, m, 2);
 
     // создание сплайнов
-    CubicSpline spline1_0[n];
-    CubicSpline spline2_0[m];
+    CubicSpline spline1[n];
+    CubicSpline spline2[m];
 
     // вычисление коэффициентов
-    compute_spline_coefficients(x1, y1, n, spline1_0);
-    compute_spline_coefficients(x2, y2, m, spline2_0);
+    compute_spline_coefficients(x1, y1, n, spline1);
+    compute_spline_coefficients(x2, y2, m, spline2);
 
-    CubicSpline spline1[n - 1];
-    CubicSpline spline2[m - 1];
-
-
-    for (int i = 0; i < n - 1; i++){
-        spline1[i] = spline1_0[i];
-    }
-
-    for (int i = 0; i < m - 1; i++){
-        spline2[i] = spline2_0[i];
-    }
+//    CubicSpline spline1[n - 1];
+//    CubicSpline spline2[m - 1];
+//
+//
+//    for (int i = 0; i < n - 1; i++) {
+//        spline1[i] = spline1_0[i];
+//    }
+//
+//    for (int i = 0; i < m - 1; i++) {
+//        spline2[i] = spline2_0[i];
+//    }
 
     //Выводим коэффициенты
     for (int i = 0; i < n - 1; i++) {
@@ -478,16 +492,15 @@ int main() {
     if (cross_p == 0) {
         printf("Spline_1 and spline_2 don't intersect\n");
         double min_dist = find_min_distance(spline1, spline2, x1, x2, n, m);
-        if (min_dist != -1){
+        if (min_dist != -1) {
             printf("The minimum distance between spline 1 and spline 2 is %f.\n", min_dist);
-        }else{
+        } else {
             printf("The minimum distance can't be found.");
         }
     } else {
-        printf("Spline_1 and spline_2 intersect at:\n");
-        for (int i = 0; i < cross_p; i++){
-            printf("x=%f\ty=%f", intersect_points[i]->x, intersect_points[i]->y);
-        }
+        printf("ojnijniuni");
+        printf("x = %8.5lf; y = %8.5lf\n", intersect_points[0]->x, intersect_points[0]->y);
     }
+
     return 0;
 }
