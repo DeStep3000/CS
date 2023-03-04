@@ -11,6 +11,9 @@ typedef struct {
     double x; // Левый конец интервала
 } CubicSpline;
 
+double min(double a, double b) {
+    return (a < b ? a : b);
+}
 // Функция, которая вычисляет коэффициенты для кубического сплайна
 // на основе заданных координат x и y точек
 void compute_spline_coefficients(double *x, double *y, int n, CubicSpline *spline) {
@@ -59,11 +62,6 @@ void compute_spline_coefficients(double *x, double *y, int n, CubicSpline *splin
     free(z);
 }
 
-// Функция, которая вычисляет расстояние между двумя точками
-double compute_distance(double x1, double y1, double x2, double y2) {
-    return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
-}
-
 // Функция для вычисления значения кубического сплайна в точке x
 double evaluate_cubic_spline(double x, double *splX, CubicSpline *spline, int n) {
     if (x <= splX[0])
@@ -88,39 +86,83 @@ double evaluate_cubic_spline(double x, double *splX, CubicSpline *spline, int n)
 
 // Функция, которая проверяет, пересекаются ли два кубических сплайна, и если да, находит точки пересечения
 
+double calculate_point(CubicSpline *coefs, double x, double x0) {
+    return coefs->a + coefs->b * (x - x0) + coefs->c * pow(x - x0, 2) + coefs->d * pow(x - x0, 3);
+}
+
+void calculate_gradient(double *grad, CubicSpline *spline1_coef, CubicSpline *spline2_coef, double *x, double x10, double x20) {
+    // f(x1, x2) = (x1 - x2)^2 + (f1(x1) - f2(x2))^2
+    // f(x1, x2) -> min
+    // f' по x1 = 2(x1 - x2) + 2(f1(x1) - f2(x2)) * (b1 + 2c1(x1-x10) + 3d1(x1-x10)^2)
+    // f' по x2 = -2(x1 - x2) + 2(f1(x1) - f2(x2)) * -(b2 + 2c2(x2-x20) + 3d2(x2-x20)^2)
+
+    double f1 = calculate_point(spline1_coef, x[0], x10);
+    double f2 = calculate_point(spline2_coef, x[1], x20);
+
+    grad[0] = 2 * (x[0] - x[1]) + 2 * (f1 - f2) * (spline1_coef->b + 2 * spline1_coef->c * (x[0] - x10) +
+                                                   3 * spline1_coef->d * pow(x[0] - x10, 2));
+
+    grad[1] = -2 * (x[0] - x[1]) + 2 * (f1 - f2) * -(spline2_coef->b + 2 * spline2_coef->c * (x[1] - x20) +
+                                                     3 * spline2_coef->d * pow(x[1] - x20, 2));
+}
+
+
 // Функция, которая находит минимальное расстояние между двумя кубическими сплайнами
-double find_intersection_and_min_distance(CubicSpline *spline1, CubicSpline *spline2, double *x_1, double *x_2, int n, int m) {
-    double min_distance = INFINITY;
-    int i, j;
-    int intersect = 0;
-    double a = 0.1;
-    // Вычисляем расстояние между каждой парой точек на обоих сплайнах
-    for (i = 0; i < n - 2; i++) {
-        for (j = 0; j < m - 2; j++) {
-            for (double k = 0; spline1[i].x + k < spline1[i + 1].x; k += a) {
-                for (double z = 0; spline2[j].x + z < spline2[j + 1].x; z += a) {
-                    double x1 = spline1[i].x + k;
-                    double y1 = evaluate_cubic_spline(x1, x_1, spline1, n);
-                    double x2 = spline2[j].x + z;
-                    double y2 = evaluate_cubic_spline(x2, x_2, spline2, m);
-                    double distance = compute_distance(x1, y1, x2, y2);
-//                    printf("%f\n", distance);
-                    if (distance < min_distance) {
-                        min_distance = distance;
-                    }
-                    if (min_distance < EPSILON) {
-                        intersect = 1;
-                        printf("%f %f\n", x1, y1);
-                        return 0;
-                    }
+
+double find_min_distance(CubicSpline *spline1, CubicSpline *spline2, double *x_1, double *x_2, int n, int m, double *intersect) {
+    // f(x1, x2) = (x1 - x2) ^ 2 + (f1(x1) - f2(x2)) ^ 2
+    // f(x1, x2) -> min
+    // f' по x1 = 2(x1 - x2) + 2(f1(x1) - f2(x2)) * (b1 + 2c1(x1-x10) + 3d1(x1-x10)^2)
+    // f' по x2 = -2(x1 - x2) + 2(f1(x1) - f2(x2)) * -(b2 + 2c2(x2-x20) + 3d2(x2-x20)^2)
+
+    // https://en.wikipedia.org/wiki/Gradient_descent
+    double grad[2];
+    double x_prev[2], x[2];
+    double lambda = 0.1;
+    double minimum = INFINITY;
+    short flag = 1;
+    int counts = 0;
+
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = 0; j < m - 1; j++) {
+            // solution
+            x_prev[0] = x_1[i];
+            x_prev[1] = x_2[j];
+
+            while (1) {
+                calculate_gradient(grad, &spline1[i], &spline2[j], x_prev, x_1[i],
+                                   x_2[j]);
+                x[0] = x_prev[0] - lambda * grad[0];
+                x[1] = x_prev[1] - lambda * grad[1];
+
+                if ((fabs(x[0] - x_prev[0]) < EPSILON && fabs(x[1] - x_prev[1]) < EPSILON))
+                    break;
+
+                if (x[0] < x_1[i] || x[0] > x_1[i + 1] ||
+                    x[1] < x_2[j] || x[1] > x_2[j + 1])
+                    break;
+
+                x_prev[0] = x[0];
+                x_prev[1] = x[1];
+            }
+
+            if (x[0] >= x_1[i] && x[0] <= x_1[i + 1] &&
+                x[1] >= x_2[j] && x[1] <= x_2[j + 1]) {
+                // f(x1, x2) = (x1 - x2)^2 + (f1(x1) - f2(x2))^2
+                double res = pow(x[0] - x[1], 2) + pow(calculate_point(&spline1[i], x[0], x_1[i]) -
+                                                       calculate_point(&spline2[j], x[1], x_2[j]), 2);
+                if (res < EPSILON){
+                    flag = 0;
+                    intersect[counts] = x_1[i];
+                    counts++;
                 }
+                minimum = min(minimum, res);
+
             }
         }
     }
-    if (intersect) {
-        return 0;
-    }
-    return min_distance;
+
+    return flag ? -counts : minimum;
 }
 
 // Совместимость сплайнов
@@ -296,12 +338,17 @@ int main() {
         return 0;
     }
 
+    double *intersect_points[(n - 1) * (m - 1) * 3];
     // проверка на пересечение сплайнов
     // ВОТ НАД ЭТИМ НАДО РАБОТАТЬ
-    int difference = find_intersection_and_min_distance(spline1, spline2, x1, x2, n, m);
+    int min_dictance = find_min_distance(spline1, spline2, x1, x2, n, m, intersect_points);
 
-    if (difference > 0) {
-        printf("The minimum distance between spline 1 and spline 2 is %f.\n", difference);
+    if (min_dictance > 0) {
+        printf("The minimum distance between spline 1 and spline 2 is %f.\n", min_dictance);
+    }else {
+        for (int i = 0; i < -min_dictance; i++){
+            double y_intersect = evaluate_cubic_spline(intersect_points[i], , )
+        }
     }
     return 0;
 }
