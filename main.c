@@ -160,9 +160,8 @@ int solve_cubic(double *x, double a, double b, double c) {
 
 
 // Функция, которая проверяет, пересекаются ли два кубических сплайна, и если да, находит точки пересечения
-int
-find_intersection(Coords *intersect_points, CubicSpline *spline1, CubicSpline *spline2, double *x_1, double *x_2, int n,
-                  int m) {
+int find_intersection(Coords *intersect_points, CubicSpline *spline1, CubicSpline *spline2, double *x_1, double *x_2,
+                      int n, int m) {
     int curr = 0;
     double *roots = (double *) malloc(3 * sizeof(double));
     int roots_count;
@@ -415,7 +414,7 @@ int main() {
 
     int m = 4;
     double x2[] = {2, 4, 7, 11};
-    double y2[] = {1, 4, 2, 5};
+    double y2[] = {3, 4, 2, 5};
     printf("------------------------------------------------------------------------------------------\n");
     // сортировка сплайнов
     sort(x1, y1, n, 1);
@@ -485,10 +484,10 @@ int main() {
         return 0;
     }
 
-    Coords *intersect_points[(n - 1) * (m - 1) * 3];
+    Coords *intersect_points = (Coords *) malloc((n - 1) * (m - 1) * 3 * sizeof(Coords));
     // проверка на пересечение сплайнов
     // ВОТ НАД ЭТИМ НАДО РАБОТАТЬ
-    int cross_p = find_intersection(*intersect_points, spline1, spline2, x1, x2, n, m);
+    int cross_p = find_intersection(intersect_points, spline1, spline2, x1, x2, n, m);
     if (cross_p == 0) {
         printf("Spline_1 and spline_2 don't intersect\n");
         double min_dist = find_min_distance(spline1, spline2, x1, x2, n, m);
@@ -498,9 +497,9 @@ int main() {
             printf("The minimum distance can't be found.");
         }
     } else {
-        printf("ojnijniuni");
-        printf("x = %8.5lf; y = %8.5lf\n", intersect_points[0]->x, intersect_points[0]->y);
+        printf("x = %lf; y = %lf\n", intersect_points[0].x, intersect_points[0].y);
     }
 
+    free(intersect_points);
     return 0;
 }
