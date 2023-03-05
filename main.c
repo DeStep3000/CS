@@ -19,7 +19,7 @@ typedef struct {
     double y;
 } Coords;
 
-
+//Собственные функции min и max соответственно
 double min(double a, double b) {
     return (a < b ? a : b);
 }
@@ -31,6 +31,7 @@ double max(double a, double b) {
 // Функция, которая вычисляет коэффициенты для кубического сплайна
 // на основе заданных координат x и y точек
 void compute_spline_coefficients(double *x, double *y, int n, CubicSpline *spline) {
+    // Выделяем память
     double *h = malloc(n * sizeof(double));
     double *alpha = malloc(n * sizeof(double));
     double *l = malloc(n * sizeof(double));
@@ -38,18 +39,20 @@ void compute_spline_coefficients(double *x, double *y, int n, CubicSpline *splin
     double *z = malloc(n * sizeof(double));
     int i;
 
+    // Находим приращение аргумента
     for (i = 0; i < n - 1; i++) {
         h[i] = x[i + 1] - x[i];
     }
 
+    // Находим alpha - вектор правой части системы линейных уравнений
     for (i = 1; i < n - 1; i++) {
         alpha[i] = 3.0 / h[i] * (y[i + 1] - y[i]) - 3.0 / h[i - 1] * (y[i] - y[i - 1]);
     }
-
+    // Начальные значения
     l[0] = 1;
     mu[0] = 0;
     z[0] = 0;
-
+    // Алгоритм прогонки
     for (i = 1; i < n - 1; i++) {
         l[i] = 2.0 * (x[i + 1] - x[i - 1]) - h[i - 1] * mu[i - 1];
         mu[i] = h[i] / l[i];
@@ -60,15 +63,16 @@ void compute_spline_coefficients(double *x, double *y, int n, CubicSpline *splin
     z[n - 1] = 0;
     spline[n - 1].c = 0;
 
-
+    // Заполняем значения коэффициентов сплайна
     for (i = n - 2; i >= 0; i--) {
-        spline[i].c = z[i] - mu[i] * spline[i + 1].c;
-        spline[i].b = (y[i + 1] - y[i]) / h[i] - h[i] * (spline[i + 1].c + 2.0 * spline[i].c) / 3.0;
-        spline[i].d = (spline[i + 1].c - spline[i].c) / (3.0 * h[i]);
-        spline[i].a = y[i];
+        spline[i].c = z[i] - mu[i] * spline[i + 1].c; // С содержит решение СЛАУ
+        spline[i].b = (y[i + 1] - y[i]) / h[i] - h[i] * (spline[i + 1].c + 2.0 * spline[i].c) / 3.0; // Вычисляется по формуле из первой производной
+        spline[i].d = (spline[i + 1].c - spline[i].c) / (3.0 * h[i]); // Вычисляется по формуле из третьей производной
+        spline[i].a = y[i]; // равно значению функции в точке i
         spline[i].x = x[i];
     }
 
+    // Освобождаем память
     free(h);
     free(alpha);
     free(l);
@@ -76,29 +80,34 @@ void compute_spline_coefficients(double *x, double *y, int n, CubicSpline *splin
     free(z);
 }
 
-// Функция для вычисления значения кубического сплайна в точке x на некотором сплайне
+// Функция для вычисления значения кубического сплайна в точке x
+// Нужна для вывода
 double evaluate_cubic_spline(double x, double *splX, CubicSpline *spline, int n) {
+    // Вычисление точки, находящейся левее нашего сплайна
     if (x <= splX[0])
         return spline[0].a + spline[0].b * (x - splX[0]) + spline[0].c * pow(x - splX[0], 2) +
                spline[0].d * pow(x - splX[0], 3);
 
+    // Вычисление точки, находящейся правее нашего сплайна
     if (x >= splX[n - 2])
         return spline[n - 2].a + spline[n - 2].b * (x - splX[n - 2]) + spline[n - 2].c * pow(x - splX[n - 2], 2) +
                spline[n - 2].d * pow(x - splX[n - 2], 3);
 
+    // Находим в каком промежутке находится наша точка x
     int i;
     for (i = 0; i < n - 1; i++) {
         if (x >= splX[i] && x < splX[i + 1])
             break;
     }
 
-
+    // Вычисляем значение сплайна в точке x
     double h = x - splX[i];
     double y = spline[i].a + spline[i].b * h + spline[i].c * pow(h, 2) + spline[i].d * pow(h, 3);
     return y;
 }
 
 // Функция для вычисления значения кубического сплайна в точке x на некотором сплайне с известной x0
+// Нужна для вычислений в программе
 double calculate_point(CubicSpline *coefs, double x, double x0) {
     return coefs->a + coefs->b * (x - x0) + coefs->c * pow(x - x0, 2) + coefs->d * pow(x - x0, 3);
 }
@@ -114,7 +123,7 @@ int solve_quadratic(double *x, double a, double b, double c) {
     if (d < 0.) {
         return 0;
     }
-    /* 2 real roots: avoid subtraction of 2 close numbers */
+    // 2 корня: избегаем вычитания 2 близких чисел
     if (b >= 0)
         d = (-0.5) * (b + sqrt(d));
     else
@@ -168,12 +177,14 @@ int find_intersection(Coords *intersect_points, CubicSpline *spline1, CubicSplin
     double *roots = (double *) malloc(3 * sizeof(double));
     int roots_count;
 
+    // Решаем уравнения на каждом интервале
     for (int i = 0; i < n - 1; i++) {
         for (int j = 0; j < m - 1; j++) {
             double left_border = max(x_1[i], x_2[j]);
             double right_border = min(x_1[i + 1], x_2[j + 1]);
             if (left_border <= right_border) {
                 // ax^3 + bx^2 + cx + d
+                // Находим разности коэффициентов для удобного решения по Кардано
                 double a = spline1[i].d - spline2[j].d;
                 double b = (spline1[i].c - 3 * spline1[i].d * x_1[i]);
                 b -= (spline2[j].c - 3 * spline2[j].d * x_2[j]);
@@ -213,6 +224,7 @@ int find_intersection(Coords *intersect_points, CubicSpline *spline1, CubicSplin
                         // проверка совпадающих решений на концах областей определения функций
                         if (curr > 0 && intersect_points[curr - 1].x == roots[k])
                             continue;
+                        // Записываем точки пересечения в массив
                         intersect_points[curr].x = roots[k];
                         intersect_points[curr].y = calculate_point(&spline1[i], roots[k], x_1[i]);
                         curr++;
@@ -224,9 +236,11 @@ int find_intersection(Coords *intersect_points, CubicSpline *spline1, CubicSplin
 
     free(roots);
 
+    // Общее количество точек
     return curr;
 }
 
+// Функция градиентного спуска нужна для нахождения минимального расстояния между сплайнами
 void calculate_gradient(double *grad, CubicSpline *spline1_coef, CubicSpline *spline2_coef, double *x, double x10,
                         double x20) {
     // f(x1, x2) = (x1 - x2)^2 + (f1(x1) - f2(x2))^2
@@ -262,7 +276,7 @@ double find_min_distance(CubicSpline *spline1, CubicSpline *spline2, double *x_1
 
     for (int i = 0; i < n - 1; i++) {
         for (int j = 0; j < m - 1; j++) {
-            // solution
+            // Решение
             x_prev[0] = x_1[i];
             x_prev[1] = x_2[j];
 
@@ -285,8 +299,9 @@ double find_min_distance(CubicSpline *spline1, CubicSpline *spline2, double *x_1
 
             if (x[0] >= x_1[i] && x[0] <= x_1[i + 1] &&
                 x[1] >= x_2[j] && x[1] <= x_2[j + 1]) {
-                double res = pow(x[0] - x[1], 2) + pow(calculate_point(&spline1[i], x[0], x_1[i]) -
-                                                       calculate_point(&spline2[j], x[1], x_2[j]), 2);
+                // Находим расстояние между точками
+                double res = sqrt(pow(x[0] - x[1], 2) + pow(calculate_point(&spline1[i], x[0], x_1[i]) -
+                                                       calculate_point(&spline2[j], x[1], x_2[j]), 2));
                 if (res < EPSILON) {
                     flag = 0;
                     counts++;
@@ -436,7 +451,7 @@ int main() {
     for (int i = 0; i < m - 1; i++) {
         spline2[i] = spline20[i];
     }
-    printf("Coefficients od spline_1 and spline_2:\n");
+    printf("Coefficients of spline_1 and spline_2:\n");
     //Выводим коэффициенты
     for (int i = 0; i < n - 1; i++) {
         printf("Spline_1[%d]: a = %lf, b = %lf, c = %lf, d = %lf, x = %lf\n", i, spline1[i].a,
@@ -495,6 +510,7 @@ int main() {
             printf("The minimum distance can't be found.");
         }
     } else {
+        printf("Intersection points are: \n");
         for (int i = 0; i < cross_p; i++){
             printf("x = %lf; y = %lf\n", intersect_points[i].x, intersect_points[i].y);
         }
