@@ -84,19 +84,19 @@ void compute_spline_coefficients(double *x, double *y, int n, CubicSpline *splin
 // Нужна для вывода
 double evaluate_cubic_spline(double x, double *splX, CubicSpline *spline, int n) {
     // Вычисление точки, находящейся левее нашего сплайна
-    if (x <= splX[0])
+    if (x < splX[0])
         return spline[0].a + spline[0].b * (x - splX[0]) + spline[0].c * pow(x - splX[0], 2) +
                spline[0].d * pow(x - splX[0], 3);
 
     // Вычисление точки, находящейся правее нашего сплайна
-    if (x >= splX[n - 2])
-        return spline[n - 2].a + spline[n - 2].b * (x - splX[n - 2]) + spline[n - 2].c * pow(x - splX[n - 2], 2) +
-               spline[n - 2].d * pow(x - splX[n - 2], 3);
+    if (x > splX[n - 1])
+        return spline[n - 2].a + spline[n - 2].b * (x - splX[n - 1]) + spline[n - 2].c * pow(x - splX[n - 1], 2) +
+               spline[n - 2].d * pow(x - splX[n - 1], 3);
 
     // Находим в каком промежутке находится наша точка x
     int i;
     for (i = 0; i < n - 1; i++) {
-        if (x >= splX[i] && x < splX[i + 1])
+        if (x >= splX[i] && x <= splX[i + 1])
             break;
     }
 
@@ -150,10 +150,10 @@ int solve_cubic(double *x, double a, double b, double c) {
         return (3);
     } else {
         double aa, bb;
-        if (r <= 0.)
+        if (r <= 0)
             r = -r;
         aa = -pow(r + sqrt(r2 - q3), 1. / 3.);
-        if (aa != 0.)
+        if (aa != 0)
             bb = q / aa;
         else
             bb = 0.;
@@ -163,7 +163,7 @@ int solve_cubic(double *x, double a, double b, double c) {
         x[0] = q - a;
         x[1] = (-0.5) * q - a;
         x[2] = (sqrt(3.) * 0.5) * fabs(r);
-        if (x[2] == 0.)
+        if (x[2] == 0)
             return (2);
         return (1);
     }
@@ -428,9 +428,10 @@ int main() {
 //    double x2[] = {2, 4, 7, 11};
 //    double y2[] = {3, 4, 2, 5};
 //    printf("------------------------------------------------------------------------------------------\n");
-//    // сортировка сплайнов
-//    sort(x1, y1, n, 1);
-//    sort(x2, y2, m, 2);
+
+    // сортировка сплайнов
+    sort(x1, y1, n, 1);
+    sort(x2, y2, m, 2);
 
     // создание сплайнов
     CubicSpline spline10[n];
