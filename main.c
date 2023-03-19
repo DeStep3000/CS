@@ -209,18 +209,18 @@ int find_intersection(Coords *intersect_points, CubicSpline *spline1, CubicSplin
                      spline2[j].c * pow(x_2[j], 2) -
                      spline2[j].d * pow(x_2[j], 3);
 
+                // Смотрим по коэффициентам, какое у нас уравнение
                 if (a != 0) {
-                    // кубический случай
-                    // приводим уравнение для Кардано
+                    // Кубический случай и переделываем для Кардано
                     b /= a;
                     c /= a;
                     d /= a;
                     decision_count = solve_cubic(decision, b, c, d);
                 } else if (b != 0) {
-                    // квадратичный случай
+                    // Квадратичный случай
                     decision_count = solve_quadratic(decision, b, c, d);
                 } else if (c != 0) {
-                    // линейный случай
+                    // Линейный случай
                     decision_count = 1;
                     decision[0] = -d / c;
                 } else {
@@ -229,9 +229,11 @@ int find_intersection(Coords *intersect_points, CubicSpline *spline1, CubicSplin
 
                 for (int k = 0; k < decision_count; k++) {
                     if (decision[k] >= left_border && decision[k] <= right_border) {
-                        // проверка совпадающих решений на концах областей определения функций
+                        // Выполняем проверку на совпаданение решений на
+                        // концах областей определения функций
                         if (total > 0 && intersect_points[total - 1].x == decision[k])
                             continue;
+
                         // Записываем точки пересечения в массив
                         intersect_points[total].x = decision[k];
                         intersect_points[total].y = evaluate_point(&spline1[i], decision[k], x_1[i]);
@@ -241,7 +243,6 @@ int find_intersection(Coords *intersect_points, CubicSpline *spline1, CubicSplin
             }
         }
     }
-
     free(decision);
 
     // Общее количество точек
@@ -249,8 +250,8 @@ int find_intersection(Coords *intersect_points, CubicSpline *spline1, CubicSplin
 }
 
 // Функция градиентного спуска нужна для нахождения минимального расстояния между сплайнами
-void gradient(double *grad, CubicSpline *spline1_coef, CubicSpline *spline2_coef, double *x, double x10,
-              double x20) {
+void gradient_calculation(double *grad, CubicSpline *spline1_coef, CubicSpline *spline2_coef, double *x, double x10,
+                          double x20) {
     // f(x1, x2) = (x1 - x2)^2 + (f1(x1) - f2(x2))^2
     // f(x1, x2) -> min
     // f' по x1 = 2(x1 - x2) + 2(f1(x1) - f2(x2)) * (b1 + 2c1(x1-x10) + 3d1(x1-x10)^2)
@@ -286,8 +287,8 @@ double find_min_distance(CubicSpline *spline1, CubicSpline *spline2, double *x_1
             real_x[1] = x_2[j];
 
             while (1) {
-                gradient(grad, &spline1[i], &spline2[j], real_x, x_1[i],
-                         x_2[j]);
+                gradient_calculation(grad, &spline1[i], &spline2[j], real_x, x_1[i],
+                                     x_2[j]);
                 perhaps_x[0] = real_x[0] - lambda * grad[0];
                 perhaps_x[1] = real_x[1] - lambda * grad[1];
 
