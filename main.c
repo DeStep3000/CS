@@ -350,6 +350,7 @@ void sort(double *arr_x, double *arr_y, int n, int k) {
                 tmp = arr_x[j];
                 arr_x[j] = arr_x[j + 1];
                 arr_x[j + 1] = tmp;
+
                 noSwap = 0;
                 tmp = arr_y[j];
                 arr_y[j] = arr_y[j + 1];
@@ -479,6 +480,7 @@ int main() {
     for (int i = 0; i < m - 1; i++) {
         spline2[i] = spline20[i];
     }
+
     printf("Coefficients of spline_1 and spline_2:\n");
     //Выводим коэффициенты
     for (int i = 0; i < n - 1; i++) {
@@ -526,8 +528,9 @@ int main() {
 
     //Массив для точек пересечения сплайнов
     Coords *intersect_points = (Coords *) malloc((n - 1) * (m - 1) * 3 * sizeof(Coords));
-    // проверка на пересечение сплайнов
+    // Проверка на пересечение сплайнов
     int cross_p = find_intersection(intersect_points, spline1, spline2, x1, x2, n, m);
+    // Удаление дупликатов точек и корректировка кол - ва точек пересечений
     cross_p = remove_duplicates(intersect_points, cross_p);
     if (cross_p == 0) {
         printf("Spline_1 and spline_2 don't intersect\n");
